@@ -29,4 +29,15 @@ $ 00_csv_to_yml -v dist -t "0:gebuchte Umsätze:1" data/00_account/*.csv
 
 ## 01_deduplicate
 
+
+### Example
+
+The following example will read the file `dist/01_bookings/2021-07-18T00:22:29.420925.yml` from the previous step.
+All bookings between _1.1.2020_ (incl.) and _31.12.2020_ (incl.) will be added to the result.
+the date is in column _date\_1_.
+
+```zsh
+$ 01_deduplicate -d dist dist/01_bookings/2021-07-18T00:22:29.420925.yml -s 01.01.2020 -e 31.12.2020 --datecol "date_1"
+```
+
 ## 02_assign_to_accounts
