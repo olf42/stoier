@@ -2,33 +2,13 @@
 
 import click
 import csv
-import datetime
 import logging
-import yaml
 
 from pathlib import Path
-
-LOG_FORMAT = {
-    logging.WARNING: "%(message)s",
-    logging.INFO: "%(message)s",
-    logging.DEBUG: "%(levelname)s: %(message)s"
-}
+from stoier.log import setup_logging
+from stoier.utils import save_yaml
 
 logger = logging.getLogger(__name__)
-
-
-def setup_logging(debug, verbose):
-    level = get_loglevel(debug, verbose)
-    logging.basicConfig(level=level, format=LOG_FORMAT[level])
-
-
-def get_loglevel(debug, verbose):
-    if debug:
-        return logging.DEBUG
-    elif verbose:
-        return logging.INFO
-    else:
-        return logging.WARNING
 
 
 class Book:
@@ -49,10 +29,10 @@ class Book:
             if trigger:
                 if not row:
                     continue
-                logging.debug(f"{r}: {row}")
+                logger.debug(f"{r}: {row}")
                 if row[trigger[0]] == trigger[1] and row:
                     skip = r + trigger[2]
-                    logging.debug(
+                    logger.debug(
                         f"Skipped {r} rows until trigger found. Starting in {trigger[2]} rows."
                     )
                     trigger = None
@@ -63,13 +43,16 @@ class Book:
             if r == skip:
                 if not header:
                     header = row
-                    logging.debug(f"Found header: {header}")
+                    logger.debug(f"Found header: {header}")
                     continue
                 else:
-                    logging.debug(f"Using custom header: {header}")
+                    logger.debug(f"Using custom header: {header}")
             n_entries += 1
             self.add_entry(dict(zip(header, row)))
-        logging.info(f"{n_entries} entries (total: {len(self.entries)}) added from csv file.")
+        logger.info(f"{n_entries} entries (total: {len(self.entries)}) added from csv file.")
+
+    def to_file(self, out_path):
+        save_yaml(self, out_path)
 
 
 def get_trigger(trigger_str):
@@ -87,7 +70,7 @@ def get_trigger(trigger_str):
         trigger[2] = 0
     else:
         trigger[2] = int(trigger[2])
-    logging.debug(f"Trigger: {trigger}")
+    logger.debug(f"Trigger: {trigger}")
     return trigger
 
 
@@ -95,14 +78,6 @@ def get_header(header_str):
     if not header_str:
         return None
     return header_str.split(":")
-
-
-def save_yaml(book, out_path):
-    now = datetime.datetime.now()
-    outfilename = out_path / f"{now.isoformat()}.yml"
-    with open(outfilename, "w") as outfile:
-        yaml.dump(book.entries, outfile)
-    logging.info(f"Written {len(book.entries)} to file {outfilename}")
 
 
 @click.command()
@@ -131,7 +106,7 @@ def csv_to_yml(
     out_path = Path(out_dir) / "01_bookings"
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
-    save_yaml(book, out_path)
+    book.to_file(out_path)
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ license = "GPL-3.0"
 
 [tool.poetry.scripts]
 00_csv_to_yml = 'stoier.csvtoyaml:csv_to_yml'
+01_deduplicate = 'stoier.deduplicate:deduplicate'
 
 [tool.poetry.dependencies]
 python = "^3.9"
