@@ -52,7 +52,7 @@ class Book:
         logger.info(f"{n_entries} entries (total: {len(self.entries)}) added from csv file.")
 
     def to_file(self, out_path):
-        save_yaml(self, out_path)
+        save_yaml(self.entries, out_path)
 
 
 def get_trigger(trigger_str):

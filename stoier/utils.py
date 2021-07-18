@@ -9,8 +9,8 @@ def save_yaml(obj, out_path):
     now = datetime.datetime.now()
     outfilename = out_path / f"{now.isoformat()}.yml"
     with open(outfilename, "w") as outfile:
-        yaml.dump(obj.entries, outfile)
-    logger.info(f"Written {len(obj.entries)} to file {outfilename}")
+        yaml.safe_dump(obj, outfile)
+    logger.info(f"Written {len(obj)} to file {outfilename}")
 
 
 def get_date(date_str, date_format):

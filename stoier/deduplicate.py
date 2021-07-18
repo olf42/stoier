@@ -4,7 +4,7 @@ import click
 import logging
 import yaml
 
-from collections import OrderedDict
+from collections import defaultdict
 from pathlib import Path
 from stoier.log import setup_logging
 from stoier.utils import get_date, save_yaml
@@ -15,20 +15,35 @@ logger = logging.getLogger(__name__)
 class UniqueBook():
 
     def __init__(self):
-        self.entries = OrderedDict()
+        self.entries = defaultdict(list)
+        self.known_hashes = set()
 
     def add_entries_from_yaml(self, yaml_file, start, end, datecol, date_format):
         data = yaml.safe_load(yaml_file)
         for entry in data:
+
+            # Hashing and Deduplication
             entry_hash = hash(frozenset(entry.items()))
-            if start and get_date(entry[datecol], date_format) < start:
+            if entry_hash in self.known_hashes:
                 continue
-            if end and get_date(entry[datecol], date_format) > end:
+            else:
+                self.known_hashes.add(entry_hash)
+
+            entry_date = get_date(entry[datecol], date_format)
+
+            # Date Filtering
+            if start and entry_date < start:
                 continue
-            self.entries[entry_hash] = entry
+            if end and entry_date > end:
+                continue
+
+            # Order by date
+            entries_list = self.entries[entry_date.strftime("%Y-%m-%d")]
+            entry["id"] = len(entries_list)
+            entries_list.append(entry)
 
     def to_file(self, out_path):
-        save_yaml(self, out_path)
+        save_yaml(dict(self.entries), out_path)
 
 
 @click.command()
