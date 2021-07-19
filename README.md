@@ -27,23 +27,28 @@ row after the trigger as header.
 $ 00_csv_to_yml -v dist -t "0:gebuchte Umsätze:1" data/00_account/*.csv 
 ```
 
-## 01_deduplicate
+## 01_clean
 
-
-### Example
-
-The following example will read the file `dist/01_bookings/2021-07-18T00:22:29.420925.yml` from the previous step.
-All bookings between _1.1.2020_ (incl.) and _31.12.2020_ (incl.) will be added to the result.
-the date is in column _date\_1_.
+> Note: `01_clean` will always select the latest file. 
 
 ```zsh
-$ 01_deduplicate -d dist dist/01_bookings/2021-07-18T00:22:29.420925.yml -s 01.01.2020 -e 31.12.2020 --datecol "date_1"
+$ 01_clean -v dist dist/01_bookings
 ```
 
-## 02_clean
+## 02_deduplicate
 
+> Note: `02_deduplicate` will always select the latest file. 
 
+All bookings between _1.1.2020_ (incl.) and _31.12.2020_ (incl.) will be added to the result.
 
-## 03 validate
+```zsh
+$ 02_deduplicate -v dist dist/02_clean_bookings -s 01.01.2020 -e 31.12.2020
+```
 
-## 02 
+## 03_validate
+
+> Note: `03_deduplicate` will always select the latest file. 
+
+```zsh
+$ 03_validate -d dist dist/03_unique_bookings
+```
