@@ -27,11 +27,11 @@ class ValidatedBook():
             if self.accounts:
                 gross_account = self.accounts.get(entry[sender_col], None)
             gross_accounts = [gross_account] if gross_account else []
+            net_accounts = [net_account_name] if gross_account else []
             out_entry = {
                 "id": entry["id"],
                 "vat": True,
-                "vat_account": [],
-                "net_accounts": [net_account_name],
+                "net_accounts": net_accounts,
                 "gross_accounts": gross_accounts
             }
             self.entries[date_str].append(out_entry)
