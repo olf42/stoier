@@ -7,7 +7,7 @@ import shutil
 import socketserver
 import yaml
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from datetime import datetime
 from pathlib import Path
 from stoier.log import setup_logging
@@ -30,7 +30,7 @@ class ReportBook():
     def __init__(self):
         self.entries = OrderedDict()
         self.accounts = dict()
-        self.accounts = dict()
+        self.invoices = defaultdict(list)
 
     def add_entries_from_yaml(self, yaml_file):
         data = yaml.load(yaml_file, Loader=yaml.Loader)
@@ -44,6 +44,10 @@ class ReportBook():
     def add_account_from_yaml(self, yaml_file, account_name):
         account_data = yaml.load(yaml_file, Loader=yaml.Loader)
         self.accounts[account_name] = account_data
+
+    def add_invoice(self, account, invoice_file):
+        invoice = yaml.load(invoice_file, Loader=yaml.Loader)
+        self.invoices[account].append(invoice)
 
     def get_account_context(self, account_name):
         logger.debug(f"Get context for account {account_name}")
@@ -66,10 +70,11 @@ class ReportBook():
 @click.option("-d", "--debug", is_flag=True, default=False)
 @click.option("-v", "--verbose", is_flag=True, default=False)
 @click.option("--serve", "serve", is_flag=True, default=False)
+@click.option("--invoices_dir", default=None, type=Path)
 @click.argument("out_dir")
 @click.argument("path_to_valid_bookings")
 @click.argument("path_to_accounts")
-def report(debug, verbose, serve, out_dir, path_to_valid_bookings, path_to_accounts):
+def report(debug, verbose, serve, out_dir, invoices_dir, path_to_valid_bookings, path_to_accounts):
     setup_logging(debug, verbose)
 
     r_book = ReportBook()
@@ -82,6 +87,13 @@ def report(debug, verbose, serve, out_dir, path_to_valid_bookings, path_to_accou
             account_name = account_filepath.stem.split("_")[0]
             logger.info(f"Add account {account_name}")
             r_book.add_account_from_yaml(account_file, account_name)
+    if invoices_dir:
+        logger.debug(f"Reading invoices from {invoices_dir}")
+        for customer_dir in invoices_dir.glob("*"):
+            for invoice_path in customer_dir.glob("*.yaml"):
+                logger.info(f"Adding invoice {invoice_path.name}")
+                with open(invoice_path) as invoice_file:
+                    r_book.add_invoice(customer_dir.name, invoice_file)
 
     now = datetime.now()
     out_path = Path(out_dir) / "06_report" / now.isoformat()
