@@ -106,7 +106,6 @@ class AccountedBook():
 @click.option("--vat", "vat_amount", default=19)
 @click.argument("out_dir")
 @click.argument("data_filename")
-@click.argument("acct_filename")
 @click.argument("assign_filename")
 def account(
     debug,
@@ -116,7 +115,6 @@ def account(
     vat_col,
     out_dir,
     data_filename,
-    acct_filename,
     assign_filename
 ):
     setup_logging(debug, verbose)
@@ -124,16 +122,14 @@ def account(
     a_book = AccountedBook(vat_amount)
 
     filepath = get_latest_file(data_filename)
-    acct_filepath = get_latest_file(
-        acct_filename,
-        glob_str="accounts_*.yml",
-        date_extract_fct=lambda f: f.stem[9:]
-    )
+
     assign_filepath = get_latest_file(assign_filename)
     logger.debug(f"Using {filepath} as datafile.")
-    logger.debug(f"Using {acct_filepath} as accounts file.")
     logger.debug(f"Using {assign_filepath} as assign file.")
-    with open(filepath) as data_file, open(assign_filepath) as assign_file:
+    with (
+        open(filepath) as data_file,
+        open(assign_filepath) as assign_file
+    ):
         a_book.add_entries_from_yaml(data_file, assign_file)
 
     now = datetime.now()
