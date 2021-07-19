@@ -40,4 +40,10 @@ the date is in column _date\_1_.
 $ 01_deduplicate -d dist dist/01_bookings/2021-07-18T00:22:29.420925.yml -s 01.01.2020 -e 31.12.2020 --datecol "date_1"
 ```
 
-## 02_assign_to_accounts
+## 02_clean
+
+
+
+## 03 validate
+
+## 02 

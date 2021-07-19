@@ -7,7 +7,7 @@ import yaml
 from collections import defaultdict
 from pathlib import Path
 from stoier.log import setup_logging
-from stoier.utils import get_date, save_yaml
+from stoier.utils import get_date, get_latest_file, save_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class UniqueBook():
         self.known_hashes = set()
 
     def add_entries_from_yaml(self, yaml_file, start, end, datecol, date_format):
-        data = yaml.safe_load(yaml_file)
+        data = yaml.load(yaml_file, Loader=yaml.Loader)
         for entry in data:
 
             # Hashing and Deduplication
@@ -51,24 +51,24 @@ class UniqueBook():
 @click.option("-v", "--verbose", is_flag=True, default=False)
 @click.option("-f", "--format", "date_format", default="%d.%m.%Y")
 @click.option("-s", "--start", "start_str", default=None)
-@click.option("--datecol", "datecol", default=None)
+@click.option("--date_col", "date_col", default="date_1")
 @click.option("-e", "--end", "end_str", default=None)
 @click.argument("out_dir")
-@click.argument("filenames", nargs=-1)
+@click.argument("filename")
 def deduplicate(
-        debug, verbose, out_dir, start_str, end_str, date_format, filenames, datecol
+        debug, verbose, out_dir, start_str, end_str, date_format, filename, date_col
 ):
     setup_logging(debug, verbose)
     start = get_date(start_str, date_format)
     end = get_date(end_str, date_format)
 
     u_book = UniqueBook()
-    for filename in filenames:
-        logging.debug(filename)
-        with open(filename) as yaml_file:
-            u_book.add_entries_from_yaml(yaml_file, start, end, datecol, date_format)
+    filepath = get_latest_file(filename)
+    logger.debug(f"Reading {filepath}")
+    with open(filepath) as yaml_file:
+        u_book.add_entries_from_yaml(yaml_file, start, end, date_col, date_format)
 
-    out_path = Path(out_dir) / "02_unique_bookings"
+    out_path = Path(out_dir) / "03_unique_bookings"
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
     u_book.to_file(out_path)

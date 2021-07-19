@@ -13,10 +13,8 @@ logger = logging.getLogger(__name__)
 
 class Book:
 
-    def __init__(self, entries=None):
+    def __init__(self):
         self.entries = []
-        if entries:
-            self.add_entries(entries)
 
     def add_entry(self, entry):
         self.entries.append(entry)
@@ -51,8 +49,11 @@ class Book:
             self.add_entry(dict(zip(header, row)))
         logger.info(f"{n_entries} entries (total: {len(self.entries)}) added from csv file.")
 
-    def to_file(self, out_path):
-        save_yaml(self.entries, out_path)
+    def to_file(self, out_path, reverse=False):
+        if reverse:
+            save_yaml([e for e in reversed(self.entries)], out_path)
+        else:
+            save_yaml(self.entries, out_path)
 
 
 def get_trigger(trigger_str):
@@ -82,6 +83,7 @@ def get_header(header_str):
 
 @click.command()
 @click.option("-s", "--skip", default=0)
+@click.option("-r", "--reverse", "reverse", is_flag=True, default=False)
 @click.option("-h", "--header", "header_str", default=None)
 @click.option("-t", "--trigger", "trigger_str", default=None)
 @click.option("-e", "--encoding", default="iso-8859-1")
@@ -90,7 +92,7 @@ def get_header(header_str):
 @click.argument("out_dir")
 @click.argument("csv_filenames", nargs=-1)
 def csv_to_yml(
-        debug, verbose, header_str, trigger_str, skip, encoding, out_dir, csv_filenames
+        debug, verbose, reverse, header_str, trigger_str, skip, encoding, out_dir, csv_filenames
 ):
     setup_logging(debug, verbose)
 
@@ -106,7 +108,7 @@ def csv_to_yml(
     out_path = Path(out_dir) / "01_bookings"
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
-    book.to_file(out_path)
+    book.to_file(out_path, reverse)
 
 
 if __name__ == "__main__":
