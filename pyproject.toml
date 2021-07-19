@@ -10,8 +10,8 @@ license = "GPL-3.0"
 01_clean = 'stoier.clean:clean'
 02_deduplicate = 'stoier.deduplicate:deduplicate'
 03_validate = 'stoier.validate:validate'
-04_assign_accounts = 'stoier.accounts:assign_accounts'
-05_vat = 'stoier.vat:vat'
+04_iterate = 'stoier.iterate:iterate'
+05_account = 'stoier.account:account'
 06_report = 'stoier.report:report'
 
 [tool.poetry.dependencies]

@@ -4,10 +4,10 @@ import click
 import logging
 import yaml
 
-from datetime import datetime
+from collections import defaultdict
 from pathlib import Path
 from stoier.log import setup_logging
-from stoier.utils import get_latest_file, save_yaml
+from stoier.utils import get_latest_file, iterate_dated_dict, save_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -15,29 +15,32 @@ logger = logging.getLogger(__name__)
 class ValidatedBook():
 
     def __init__(self):
-        self.entries = dict()
+        self.entries = defaultdict(list)
 
     def add_entries_from_yaml(self, yaml_file, amount_col, balance_col):
-        data = yaml.load(yaml_file, Loader=yaml.Loader)
-        dates = [datetime.strptime(date, "%Y-%m-%d") for date in data.keys()]
-        dates.sort()
         old_balance = None
-        for date in dates:
-            date_entries = data[date.strftime("%Y-%m-%d")]
-            for entry in date_entries:
-                if not old_balance:
-                    old_balance = entry[balance_col]
-                    continue
-                else:
-                    new_balance = entry[balance_col]
-                    if new_balance != old_balance + entry[amount_col]:
-                        logger.error(f"Balance mismatch on {date} in entry {entry['id']}.")
-                        logger.error(f"{new_balance} != {old_balance} + {entry[amount_col]}")
-                    old_balance = new_balance
-        self.entries = data
+        data = yaml.load(yaml_file, Loader=yaml.Loader)
+        for date_str, e, entry in iterate_dated_dict(data):
+            if not old_balance:
+                old_balance = entry[balance_col]
+                continue
+            else:
+                new_balance = entry[balance_col]
+                if new_balance != old_balance + entry[amount_col]:
+                    logger.error(f"Balance mismatch on {date_str} in entry {entry['id']}.")
+                    logger.error(f"{new_balance} != {old_balance} + {entry[amount_col]}")
+                old_balance = new_balance
+            out_entry = {
+                "id": entry["id"],
+                "vat": True,
+                "vat_account": [],
+                "net_accounts": [],
+                "gross_accounts": []
+            }
+            self.entries[date_str].append(out_entry)
 
     def to_file(self, out_path):
-        save_yaml(self.entries, out_path)
+        save_yaml(dict(self.entries), out_path)
 
 
 @click.command()

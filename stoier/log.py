@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 
-import click
-import csv
-import datetime
 import logging
-import yaml
-
-from pathlib import Path
 
 LOG_FORMAT = {
     logging.WARNING: "%(message)s",

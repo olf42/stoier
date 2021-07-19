@@ -7,9 +7,10 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-def save_yaml(obj, out_path):
-    now = datetime.now()
-    outfilename = out_path / f"{now.isoformat()}.yml"
+def save_yaml(obj, out_path, prefix="", date=None):
+    if not date:
+        date = datetime.now()
+    outfilename = out_path / f"{prefix}{date.isoformat()}.yml"
     with open(outfilename, "w") as outfile:
         yaml.dump(obj, outfile)
     logger.info(f"Written {len(obj)} items to file {outfilename}")
@@ -56,3 +57,22 @@ def get_latest_file(filepath, glob_str="*.yml", date_extract_fct=lambda f: f.ste
                 maxdate = filedate
                 logger.debug(f"Setting {fileindir} as latest file.")
         return filepath / f"{maxdate.isoformat()}.yml"
+
+
+def iterate_dated_dict(obj, *, date_format="%Y-%m-%d", start=None):
+    dates = [datetime.strptime(date, date_format) for date in obj.keys()]
+    dates.sort()
+    if start:
+        if start in dates:
+            start_index = dates.index(start)
+        else:
+            for start_index, date in enumerate(dates):
+                if date > start:
+                    break
+    else:
+        start_index = 0
+    for date in dates[start_index:]:
+        date_str = date.strftime(date_format)
+        date_entries = obj[date_str]
+        for e, entry in enumerate(date_entries):
+            yield date_str, e, entry
