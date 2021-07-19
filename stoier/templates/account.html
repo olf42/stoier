@@ -6,7 +6,7 @@
     <meta name="description" content="">
     <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
     <meta name="generator" content="Hugo 0.84.0">
-    <title>Starter Template · Bootstrap v5.0</title>
+    <title>{{ account_name }} | stoier</title>
 
     <!-- Bootstrap core CSS -->
 <link href="static/bootstrap.min.css" rel="stylesheet">
@@ -19,76 +19,49 @@
 <div class="col-lg-8 mx-auto p-3 py-md-5">
   <main>
     <h1>{{ account_name }}</h1>
-    <p class="fs-5 col-md-8">Quickly and easily get started with Bootstrap's compiled, production-ready files with this barebones example featuring some basic HTML and helpful links. Download all our examples to get started.</p>
-
-    <div class="mb-5">
-      <a href="../examples/" class="btn btn-primary btn-lg px-4">Download examples</a>
+    <div class="d-flex justify-content-between">
+        <p><a href="{{ previous }}" class="btn btn-primary">Previous</a></p>
+        <p><a href="{{ next }}" class="btn btn-primary">Next</a></p>
     </div>
 
-    <hr class="col-3 col-md-2 mb-5">
-    <div class="row g-5">
-      <div class="col-md-6">
-        <h2>Starter projects</h2>
-        <p>Ready to beyond the starter template? Check out these open source projects that you can quickly duplicate to a new GitHub repository.</p>
-        <ul class="icon-list">
-          <li><a href="https://github.com/twbs/bootstrap-npm-starter" rel="noopener" target="_blank">Bootstrap npm starter</a></li>
-          <li class="text-muted">Bootstrap Parcel starter (coming soon!)</li>
-        </ul>
-      </div>
-
-      <div class="col-md-6">
-        <h2>Guides</h2>
-        <p>Read more detailed instructions and documentation on using or contributing to Bootstrap.</p>
-        <ul class="icon-list">
-          <li><a href="../getting-started/introduction/">Bootstrap quick start guide</a></li>
-          <li><a href="../getting-started/webpack/">Bootstrap Webpack guide</a></li>
-          <li><a href="../getting-started/parcel/">Bootstrap Parcel guide</a></li>
-          <li><a href="../getting-started/build-tools/">Contributing to Bootstrap</a></li>
-        </ul>
-      </div>
+    <div class="row">
+        <div class="col">
+        <div class="d-flex justify-content-between">
+            <h2>Bookings</h2>
+            <h3>Total: {{ bookings | sum(attribute='amount') }}</h3>
+        </div>
+    {% for booking in bookings %}
+    <div class="card border-primary mb-3">
+        <div class="card-header d-flex justify-content-between">
+            <p>{{ booking.date_1 }}</p>
+            <p>{{ booking.amount }}</p>
+        </div>
+        <div class="card-body">
+            <h4 class="card-title">{{ booking.sender }}</h4>
+            <p class="card-text">{{ booking.details }}</p>
+        </div>
     </div>
+    {% endfor %}
 
-    <div class="row g-5">
-      <div class="col-md-6">
-        <h2>Starter projects</h2>
-        <p>Ready to beyond the starter template? Check out these open source projects that you can quickly duplicate to a new GitHub repository.</p>
-        <ul class="icon-list">
-          <li><a href="https://github.com/twbs/bootstrap-npm-starter" rel="noopener" target="_blank">Bootstrap npm starter</a></li>
-          <li class="text-muted">Bootstrap Parcel starter (coming soon!)</li>
-        </ul>
-      </div>
-
-      <div class="col-md-6">
-        <h2>Guides</h2>
-        <p>Read more detailed instructions and documentation on using or contributing to Bootstrap.</p>
-        <ul class="icon-list">
-          <li><a href="../getting-started/introduction/">Bootstrap quick start guide</a></li>
-          <li><a href="../getting-started/webpack/">Bootstrap Webpack guide</a></li>
-          <li><a href="../getting-started/parcel/">Bootstrap Parcel guide</a></li>
-          <li><a href="../getting-started/build-tools/">Contributing to Bootstrap</a></li>
-        </ul>
-      </div>
     </div>
-    <div class="row g-5">
-      <div class="col-md-6">
-        <h2>Starter projects</h2>
-        <p>Ready to beyond the starter template? Check out these open source projects that you can quickly duplicate to a new GitHub repository.</p>
-        <ul class="icon-list">
-          <li><a href="https://github.com/twbs/bootstrap-npm-starter" rel="noopener" target="_blank">Bootstrap npm starter</a></li>
-          <li class="text-muted">Bootstrap Parcel starter (coming soon!)</li>
-        </ul>
-      </div>
-
-      <div class="col-md-6">
-        <h2>Guides</h2>
-        <p>Read more detailed instructions and documentation on using or contributing to Bootstrap.</p>
-        <ul class="icon-list">
-          <li><a href="../getting-started/introduction/">Bootstrap quick start guide</a></li>
-          <li><a href="../getting-started/webpack/">Bootstrap Webpack guide</a></li>
-          <li><a href="../getting-started/parcel/">Bootstrap Parcel guide</a></li>
-          <li><a href="../getting-started/build-tools/">Contributing to Bootstrap</a></li>
-        </ul>
-      </div>
+    <div class="col">
+        <div class="d-flex justify-content-between">
+            <h2>Invoices</h2>
+            <h3>Total: {{ invoices | sum(attribute='total_gross') }}</h3>
+        </div>
+        {% for invoice in invoices %}
+        <div class="card border-primary mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <p>{{ invoice.date }}</p>
+                <p>{{ invoice.total_gross }}</p>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">{{ invoice.address.0 }}</h4>
+                <p class="card-text">{{ invoice.period }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
     </div>
   </main>
   <footer class="pt-5 my-5 text-muted border-top">

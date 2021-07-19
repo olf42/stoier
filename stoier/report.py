@@ -32,6 +32,9 @@ class ReportBook():
         self.accounts = dict()
         self.invoices = defaultdict(list)
 
+    def sort_accounts(self):
+        self.accounts = OrderedDict(sorted(self.accounts.items()))
+
     def add_entries_from_yaml(self, yaml_file):
         data = yaml.load(yaml_file, Loader=yaml.Loader)
         dates = [datetime.strptime(date, "%Y-%m-%d") for date in data.keys()]
@@ -51,12 +54,26 @@ class ReportBook():
 
     def get_account_context(self, account_name):
         logger.debug(f"Get context for account {account_name}")
+        accounts = list(self.accounts.keys())
+        try:
+            previous_account = accounts[accounts.index(account_name)-1] + ".html"
+        except Exception:
+            previous_account = "#"
+        try:
+            next_account = accounts[accounts.index(account_name)+1] + ".html"
+        except Exception:
+            next_account = "#"
         context = {
-            "bookings": self.accounts[account_name]
+            "previous": previous_account,
+            "next": next_account,
+            "account_name": account_name,
+            "bookings": self.accounts[account_name],
+            "invoices": self.invoices[account_name]
         }
         return context
 
     def to_files(self, out_path):
+        self.sort_accounts()
         for name, account in self.accounts.items():
             logging.info(f"Rendering account {name}")
             render_html(
