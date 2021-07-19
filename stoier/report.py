@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+
+import click
+import http.server
+import logging
+import shutil
+import socketserver
+import yaml
+
+from collections import OrderedDict
+from datetime import datetime
+from pathlib import Path
+from stoier.log import setup_logging
+from stoier.utils import iterate_dated_dict, render_html
+
+
+logger = logging.getLogger(__name__)
+
+STATIC_DIR = Path(__file__).parent / "static"
+PORT = 8000
+
+
+class ReportBook():
+
+    templates_path = Path(__file__).parent / "templates"
+    templates = {
+        "account": templates_path / "account.html"
+    }
+
+    def __init__(self):
+        self.entries = OrderedDict()
+        self.accounts = dict()
+        self.accounts = dict()
+
+    def add_entries_from_yaml(self, yaml_file):
+        data = yaml.load(yaml_file, Loader=yaml.Loader)
+        dates = [datetime.strptime(date, "%Y-%m-%d") for date in data.keys()]
+        dates.sort()
+        for date, e, entry in iterate_dated_dict(data):
+            if date not in self.entries.keys():
+                self.entries[date] = []
+            self.entries[date].append(entry)
+
+    def add_account_from_yaml(self, yaml_file, account_name):
+        account_data = yaml.load(yaml_file, Loader=yaml.Loader)
+        self.accounts[account_name] = account_data
+
+    def get_account_context(self, account_name):
+        logger.debug(f"Get context for account {account_name}")
+        context = {
+            "bookings": self.accounts[account_name]
+        }
+        return context
+
+    def to_files(self, out_path):
+        for name, account in self.accounts.items():
+            logging.info(f"Rendering account {name}")
+            render_html(
+                self.get_account_context(name),
+                self.templates["account"],
+                out_path / f"{name}.html"
+            )
+
+
+@click.command()
+@click.option("-d", "--debug", is_flag=True, default=False)
+@click.option("-v", "--verbose", is_flag=True, default=False)
+@click.option("--serve", "serve", is_flag=True, default=False)
+@click.argument("out_dir")
+@click.argument("path_to_valid_bookings")
+@click.argument("path_to_accounts")
+def report(debug, verbose, serve, out_dir, path_to_valid_bookings, path_to_accounts):
+    setup_logging(debug, verbose)
+
+    r_book = ReportBook()
+    logger.debug(path_to_valid_bookings)
+    with open(path_to_valid_bookings) as yaml_file:
+        r_book.add_entries_from_yaml(yaml_file)
+    for account_filepath in Path(path_to_accounts).glob("*.yml"):
+        logger.debug(f"Reading {account_filepath}")
+        with open(account_filepath) as account_file:
+            account_name = account_filepath.stem.split("_")[0]
+            logger.info(f"Add account {account_name}")
+            r_book.add_account_from_yaml(account_file, account_name)
+
+    now = datetime.now()
+    out_path = Path(out_dir) / "06_report" / now.isoformat()
+    if not out_path.is_dir():
+        out_path.mkdir(parents=True)
+    r_book.to_files(out_path)
+
+    logger.debug("Copying static files")
+    static_path = out_path / "static"
+    static_path.mkdir()
+    for static_file in STATIC_DIR.glob("*"):
+        logger.debug(f"Copying {static_file}")
+        shutil.copy(static_file, static_path / static_file.name)
+
+    logger.info(f"Report written to {out_path}")
+
+    if serve:
+        class Handler(http.server.SimpleHTTPRequestHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, directory=out_path, **kwargs)
+
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            print("serving at port", PORT)
+            httpd.serve_forever()
+
+
+if __name__ == "__main__":
+    report()

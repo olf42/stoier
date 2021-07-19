@@ -87,3 +87,9 @@ Options:
  -v: verbose output
  -d: debug output
  dist: out directory
+
+## Copyright
+
+* Bootswatch Theme "vapor" by Thomas Park
+* Bootstrap by Bootstrap Team 
+* stoier by Florian Rämisch

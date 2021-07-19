@@ -2,6 +2,7 @@ import logging
 import yaml
 
 from datetime import datetime
+from jinja2 import Template
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -76,3 +77,11 @@ def iterate_dated_dict(obj, *, date_format="%Y-%m-%d", start=None):
         date_entries = obj[date_str]
         for e, entry in enumerate(date_entries):
             yield date_str, e, entry
+
+
+def render_html(context, template_filepath, out_filepath):
+    with open(template_filepath) as infile:
+        template = Template(infile.read())
+    html = template.render(**context)
+    with open(out_filepath, "w") as outfile:
+        outfile.write(html)
