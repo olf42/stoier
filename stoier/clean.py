@@ -51,7 +51,7 @@ def clean(debug, verbose, amount_col, balance_col, details_col, out_dir, filenam
     c_book = CleanBook()
 
     filepath = get_latest_file(filename)
-    logging.debug(f"Reading {filename}")
+    logger.debug(f"Reading {filename}")
     with open(filepath) as yaml_file:
         c_book.add_entries_from_yaml(yaml_file, amount_col, balance_col, details_col)
 

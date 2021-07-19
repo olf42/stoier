@@ -21,6 +21,15 @@ class ValidatedBook():
         old_balance = None
         data = yaml.load(yaml_file, Loader=yaml.Loader)
         for date_str, e, entry in iterate_dated_dict(data):
+            out_entry = {
+                "id": entry["id"],
+                "vat": True,
+                "vat_account": [],
+                "net_accounts": [],
+                "gross_accounts": []
+            }
+            self.entries[date_str].append(out_entry)
+
             if not old_balance:
                 old_balance = entry[balance_col]
                 continue
@@ -30,14 +39,6 @@ class ValidatedBook():
                     logger.error(f"Balance mismatch on {date_str} in entry {entry['id']}.")
                     logger.error(f"{new_balance} != {old_balance} + {entry[amount_col]}")
                 old_balance = new_balance
-            out_entry = {
-                "id": entry["id"],
-                "vat": True,
-                "vat_account": [],
-                "net_accounts": [],
-                "gross_accounts": []
-            }
-            self.entries[date_str].append(out_entry)
 
     def to_file(self, out_path):
         save_yaml(dict(self.entries), out_path)
@@ -56,7 +57,7 @@ def validate(debug, verbose, amount_col, balance_col, out_dir, filename):
     v_book = ValidatedBook()
 
     filepath = get_latest_file(filename)
-    logging.debug(f"Using {filepath}")
+    logger.debug(f"Using {filepath}")
     with open(filepath) as yaml_file:
         v_book.add_entries_from_yaml(yaml_file, amount_col, balance_col)
 

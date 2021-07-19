@@ -23,13 +23,16 @@ def iterate(debug, verbose, date_format, start_str, end_str, filename):
     setup_logging(debug, verbose)
 
     filepath = get_latest_file(filename)
-    logging.debug(f"Using {filepath}")
+    logger.debug(f"Using {filepath}")
 
     with open(filepath) as yaml_file:
         data = yaml.load(yaml_file, Loader=yaml.Loader)
-    for date_str, e, entry in iterate_dated_dict(
-        data, start=datetime.strptime(start_str, date_format)
-    ):
+    if start_str:
+        start = datetime.strptime(start_str, date_format)
+    else:
+        start = None
+
+    for date_str, e, entry in iterate_dated_dict(data, start=start):
         pprint(entry)
         input()
 

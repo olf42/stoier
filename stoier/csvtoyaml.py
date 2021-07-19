@@ -101,7 +101,7 @@ def csv_to_yml(
     book = Book()
 
     for csv_filename in csv_filenames:
-        logging.debug(csv_filename)
+        logger.debug(csv_filename)
         with open(csv_filename, encoding=encoding) as csv_file:
             book.add_entries_from_csv(csv_file, skip, trigger, header)
 
