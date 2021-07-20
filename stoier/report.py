@@ -86,12 +86,15 @@ class ReportBook():
 @click.command()
 @click.option("-d", "--debug", is_flag=True, default=False)
 @click.option("-v", "--verbose", is_flag=True, default=False)
+@click.option("-p", "--port", default=PORT)
 @click.option("--serve", "serve", is_flag=True, default=False)
 @click.option("--invoices_dir", default=None, type=Path)
 @click.argument("out_dir")
 @click.argument("path_to_valid_bookings")
 @click.argument("path_to_accounts")
-def report(debug, verbose, serve, out_dir, invoices_dir, path_to_valid_bookings, path_to_accounts):
+def report(
+    debug, verbose, port, serve, out_dir, invoices_dir, path_to_valid_bookings, path_to_accounts
+):
     setup_logging(debug, verbose)
 
     r_book = ReportBook()
@@ -132,7 +135,7 @@ def report(debug, verbose, serve, out_dir, invoices_dir, path_to_valid_bookings,
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, directory=out_path, **kwargs)
 
-        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        with socketserver.TCPServer(("", port), Handler) as httpd:
             print("serving at port", PORT)
             httpd.serve_forever()
 
