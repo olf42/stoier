@@ -50,7 +50,7 @@
             <h3>Total: {{ invoices | sum(attribute='total_gross') }}</h3>
         </div>
         {% for invoice in invoices %}
-        <div class="card border-primary mb-3">
+        <div class="card border-secondary mb-3">
             <div class="card-header d-flex justify-content-between">
                 <p>{{ invoice.date }}</p>
                 <p>{{ invoice.total_gross }}</p>
