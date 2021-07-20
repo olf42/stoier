@@ -24,7 +24,9 @@ def get_date(date_str, date_format):
         return None
 
 
-def get_latest_file(filepath, glob_str="*.yml", date_extract_fct=lambda f: f.stem):
+def get_latest_file(
+        filepath, glob_str="*.yml", ext=".yml", date_extract_fct=lambda f: f.stem
+):
     """
     Given the input from (supposedly) a commandline argument this function returns
     the path to the latest file in the directory.
@@ -32,6 +34,8 @@ def get_latest_file(filepath, glob_str="*.yml", date_extract_fct=lambda f: f.ste
     Note: The latest file is the file with the latest isoformat date in the filename.
 
     If a filename is given, the filename is returned.
+
+    This also works for directories. In that case, ext should be "".
 
     :param filename: str/path of the dir or file
     :param glob_str: glob to be used to identify valid files. Default: *.yml
@@ -57,7 +61,7 @@ def get_latest_file(filepath, glob_str="*.yml", date_extract_fct=lambda f: f.ste
             if filedate > maxdate:
                 maxdate = filedate
                 logger.debug(f"Setting {fileindir} as latest file.")
-        return filepath / f"{maxdate.isoformat()}.yml"
+        return filepath / f"{maxdate.isoformat()}{ext}"
 
 
 def iterate_dated_dict(obj, *, date_format="%Y-%m-%d", start=None):
