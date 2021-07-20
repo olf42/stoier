@@ -11,7 +11,7 @@ from collections import OrderedDict, defaultdict
 from datetime import datetime
 from pathlib import Path
 from stoier.log import setup_logging
-from stoier.utils import iterate_dated_dict, render_html
+from stoier.utils import iterate_dated_dict, get_latest_file, render_html
 
 
 logger = logging.getLogger(__name__)
@@ -98,9 +98,12 @@ def report(
     setup_logging(debug, verbose)
 
     r_book = ReportBook()
-    logger.debug(path_to_valid_bookings)
-    with open(path_to_valid_bookings) as yaml_file:
+
+    bookings_path = get_latest_file(path_to_valid_bookings)
+    logger.debug(f"Using {bookings_path}")
+    with open(bookings_path) as yaml_file:
         r_book.add_entries_from_yaml(yaml_file)
+
     for account_filepath in Path(path_to_accounts).glob("*.yml"):
         logger.debug(f"Reading {account_filepath}")
         with open(account_filepath) as account_file:
