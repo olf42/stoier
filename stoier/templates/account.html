@@ -37,7 +37,10 @@
             <p>{{ booking.amount }}</p>
         </div>
         <div class="card-body">
-            <h4 class="card-title">{{ booking.sender }}</h4>
+		<div class="d-flex justify-content-between">
+		    <h4 class="card-title">{{ booking.sender }}</h4>
+	            <h4 class="card-title">{{ booking.receiver }}</h4>
+		</div>
             <p class="card-text">{{ booking.details }}</p>
         </div>
     </div>
