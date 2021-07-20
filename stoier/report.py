@@ -148,7 +148,7 @@ def report(
                 super().__init__(*args, directory=out_path, **kwargs)
 
         with socketserver.TCPServer(("", port), Handler) as httpd:
-            print("serving at port", PORT)
+            logging.info(f"Serving at http://localhost:{port}/")
             httpd.serve_forever()
 
 
