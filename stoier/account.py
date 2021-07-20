@@ -8,7 +8,13 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from stoier.log import setup_logging
-from stoier.utils import get_latest_file, iterate_dated_dict, save_yaml
+from stoier.utils import (
+    get_latest_file,
+    iterate_dated_dict,
+    save_yaml,
+    NotADateError,
+    NotADirError
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +67,13 @@ class Account():
             b["gross_amount"] = b[self.amount_col]
         self.bookings.append(b)
 
+    def serialize(self):
+        return {
+            "name": self.name,
+            "type": self.acct_type,
+            "bookings": self.bookings
+        }
+
 
 class AccountedBook():
 
@@ -95,7 +108,7 @@ class AccountedBook():
 
     def to_files(self, out_path, now):
         for name, account in self.accounts.items():
-            save_yaml(account.bookings, out_path, prefix=f"{name}_", date=now)
+            save_yaml(account.serialize(), out_path, prefix=f"{name}_", date=now)
 
 
 @click.command()
@@ -121,9 +134,13 @@ def account(
 
     a_book = AccountedBook(vat_amount)
 
-    filepath = get_latest_file(data_filename)
+    try:
+        filepath = get_latest_file(data_filename)
+        assign_filepath = get_latest_file(assign_filename)
+    except (NotADateError, NotADirError) as e:
+        logger.error(e)
+        exit(1)
 
-    assign_filepath = get_latest_file(assign_filename)
     logger.debug(f"Using {filepath} as datafile.")
     logger.debug(f"Using {assign_filepath} as assign file.")
     with (

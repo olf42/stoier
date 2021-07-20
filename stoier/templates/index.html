@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.84.0">
+    <title>{{ account_name }} | stoier</title>
+
+    <!-- Bootstrap core CSS -->
+<link href="static/bootstrap.min.css" rel="stylesheet">
+
+    
+    <!-- Custom styles for this template -->
+  </head>
+  <body>
+    
+<div class="col-lg-8 mx-auto p-3 py-md-5">
+  <main>
+    <h1>stoier</h1>
+
+    <div class="row">
+    <div class="col">
+        <h2>Gross accounts</h2>
+        {% for ga in accounts.gross %}
+        <div class="card border-primary mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <p>{{ ga.total }}</p>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">{{ ga.name }}</h4>
+                <p class="card-text">{{ ga.href }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="col">
+        <h2>Net accounts</h2>
+        {% for na in accounts.net %}
+        <div class="card border-primary mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <p>{{ na.total }}</p>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">{{ na.name }}</h4>
+                <p class="card-text">{{ na.href }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="col">
+        <h2>VAT accounts</h2>
+        {% for va in accounts.vat %}
+        <div class="card border-primary mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <p>{{ va.total }}</p>
+                <p>{{ va.total_in }}</p>
+                <p>{{ va.total_out }}</p>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">{{ va.name }}</h4>
+                <p class="card-text">{{ va.href }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    </div>
+  </main>
+  <footer class="pt-5 my-5 text-muted border-top">
+    Created by Florian Rämisch &middot; &copy; 2021
+  </footer>
+</div>
+
+
+    <script src="static/bootstrap.bundle.min.js"></script>
+
+      
+  </body>
+</html>

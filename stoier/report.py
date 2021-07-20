@@ -24,7 +24,8 @@ class Report():
 
     templates_path = Path(__file__).parent / "templates"
     templates = {
-        "account": templates_path / "account.html"
+        "account": templates_path / "account.html",
+        "index": templates_path / "index.html"
     }
 
     def __init__(self):
@@ -44,13 +45,54 @@ class Report():
                 self.entries[date] = []
             self.entries[date].append(entry)
 
-    def add_account_from_yaml(self, yaml_file, account_name):
+    def add_account_from_yaml(self, yaml_file):
         account_data = yaml.load(yaml_file, Loader=yaml.Loader)
+        account_name = str(account_data['name'])
+        logger.info(f"Add account {account_name}")
         self.accounts[account_name] = account_data
 
     def add_invoice(self, account, invoice_file):
         invoice = yaml.load(invoice_file, Loader=yaml.Loader)
         self.invoices[account].append(invoice)
+
+    def get_index_context(self):
+        logger.debug("Get context for index.")
+        index_accounts = {
+            "vat": [],
+            "gross": [],
+            "net": []
+        }
+        for name, account in self.accounts.items():
+            if account["type"] == "gross":
+                index_accounts["gross"].append({
+                    "name": name,
+                    "total": sum([t["gross_amount"] for t in account["bookings"]]),
+                    "href": f"{name}.html"
+                })
+            elif account["type"] == "net":
+                index_accounts["net"].append({
+                    "name": name,
+                    "total": sum([t["net_amount"] for t in account["bookings"]]),
+                    "href": f"{name}.html"
+                })
+            elif account["type"] == "vat":
+                index_accounts["vat"].append({
+                    "name": name,
+                    "total": sum([t["vat_amount"] for t in account["bookings"]]),
+                    "total_in": sum(
+                        [t["vat_amount"] for t in account["bookings"] if t["vat_amount"] > 0]
+                    ),
+                    "total_out": sum(
+                        [t["vat_amount"] for t in account["bookings"] if t["vat_amount"] < 0]
+                    ),
+                    "href": f"{name}.html"
+                })
+            else:
+                raise TypeError(f"Account {name} has unknown type: {account.type}")
+        context = {
+            "accounts": index_accounts
+        }
+        return context
 
     def get_account_context(self, account_name):
         logger.debug(f"Get context for account {account_name}")
@@ -67,7 +109,7 @@ class Report():
             "previous": previous_account,
             "next": next_account,
             "account_name": account_name,
-            "bookings": self.accounts[account_name],
+            "bookings": self.accounts[account_name]["bookings"],
             "invoices": self.invoices[account_name]
         }
         return context
@@ -81,6 +123,11 @@ class Report():
                 self.templates["account"],
                 out_path / f"{name}.html"
             )
+        render_html(
+            self.get_index_context(),
+            self.templates["index"],
+            out_path / "index.html"
+        )
 
     @classmethod
     def from_dirs(cls, bookings_dir, accounts_dir, invoices_path=None):
@@ -97,9 +144,7 @@ class Report():
         for account_filepath in Path(accounts_path).glob("*.yml"):
             logger.debug(f"Reading {account_filepath}")
             with open(account_filepath) as account_file:
-                account_name = account_filepath.stem.split("_")[0]
-                logger.info(f"Add account {account_name}")
-                report.add_account_from_yaml(account_file, account_name)
+                report.add_account_from_yaml(account_file)
 
         if invoices_path:
             logger.debug(f"Using {invoices_path} for invoices")

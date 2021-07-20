@@ -24,6 +24,14 @@ def get_date(date_str, date_format):
         return None
 
 
+class NotADateError(Exception):
+    pass
+
+
+class NotADirError(Exception):
+    pass
+
+
 def get_latest_file(
         filepath, glob_str="*.yml", ext=".yml", date_extract_fct=lambda f: f.stem
 ):
@@ -47,6 +55,8 @@ def get_latest_file(
     if filepath.is_file():
         return filepath
     else:
+        if not filepath.exists():
+            raise NotADirError(f"Directory {filepath} does not exist.")
         logger.debug(f"Finding latest file in {filepath}")
         maxdate = None
         for fileindir in filepath.glob(glob_str):
@@ -61,6 +71,8 @@ def get_latest_file(
             if filedate > maxdate:
                 maxdate = filedate
                 logger.debug(f"Setting {fileindir} as latest file.")
+        if not isinstance(maxdate, datetime):
+            raise NotADateError("No valid file/dir found")
         return filepath / f"{maxdate.isoformat()}{ext}"
 
 
