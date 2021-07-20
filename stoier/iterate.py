@@ -28,7 +28,11 @@ def iterate(debug, verbose, date_format, start_str, end_str, filename):
     with open(filepath) as yaml_file:
         data = yaml.load(yaml_file, Loader=yaml.Loader)
     if start_str:
-        start = datetime.strptime(start_str, date_format)
+        try:
+            start = datetime.strptime(start_str, date_format)
+        except ValueError:
+            logger.error(f"{start_str} is not a valid date.")
+            exit(1)
     else:
         start = None
 
