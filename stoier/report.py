@@ -20,7 +20,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 PORT = 8000
 
 
-class ReportBook():
+class Report():
 
     templates_path = Path(__file__).parent / "templates"
     templates = {
@@ -82,47 +82,56 @@ class ReportBook():
                 out_path / f"{name}.html"
             )
 
+    @classmethod
+    def from_dirs(cls, bookings_dir, accounts_dir, invoices_path=None):
+        report = cls()
+
+        bookings_path = get_latest_file(bookings_dir)
+        logger.debug(f"Using {bookings_path} for bookings")
+        with open(bookings_path) as yaml_file:
+            report.add_entries_from_yaml(yaml_file)
+
+        accounts_path = get_latest_file(
+            accounts_dir, glob_str="*", ext="", date_extract_fct=lambda f: f.name)
+        logger.debug(f"Using {accounts_path} for accounts")
+        for account_filepath in Path(accounts_path).glob("*.yml"):
+            logger.debug(f"Reading {account_filepath}")
+            with open(account_filepath) as account_file:
+                account_name = account_filepath.stem.split("_")[0]
+                logger.info(f"Add account {account_name}")
+                report.add_account_from_yaml(account_file, account_name)
+
+        if invoices_path:
+            logger.debug(f"Using {invoices_path} for invoices")
+            for customer_dir in invoices_path.glob("*"):
+                for invoice_path in customer_dir.glob("*.yaml"):
+                    logger.info(f"Adding invoice {invoice_path.name}")
+                    with open(invoice_path) as invoice_file:
+                        report.add_invoice(customer_dir.name, invoice_file)
+        return report
+
 
 @click.command()
 @click.option("-d", "--debug", is_flag=True, default=False)
 @click.option("-v", "--verbose", is_flag=True, default=False)
 @click.option("-p", "--port", default=PORT)
 @click.option("--serve", "serve", is_flag=True, default=False)
-@click.option("--invoices_dir", default=None, type=Path)
+@click.option("--invoices_dir", "invoices_path", default=None, type=Path)
 @click.argument("out_dir")
-@click.argument("path_to_valid_bookings")
-@click.argument("path_to_accounts")
+@click.argument("bookings_dir")
+@click.argument("accounts_dir")
 def report(
-    debug, verbose, port, serve, out_dir, invoices_dir, path_to_valid_bookings, path_to_accounts
+    debug, verbose, port, serve, out_dir, invoices_path, bookings_dir, accounts_dir,
 ):
     setup_logging(debug, verbose)
 
-    r_book = ReportBook()
-
-    bookings_path = get_latest_file(path_to_valid_bookings)
-    logger.debug(f"Using {bookings_path}")
-    with open(bookings_path) as yaml_file:
-        r_book.add_entries_from_yaml(yaml_file)
-
-    for account_filepath in Path(path_to_accounts).glob("*.yml"):
-        logger.debug(f"Reading {account_filepath}")
-        with open(account_filepath) as account_file:
-            account_name = account_filepath.stem.split("_")[0]
-            logger.info(f"Add account {account_name}")
-            r_book.add_account_from_yaml(account_file, account_name)
-    if invoices_dir:
-        logger.debug(f"Reading invoices from {invoices_dir}")
-        for customer_dir in invoices_dir.glob("*"):
-            for invoice_path in customer_dir.glob("*.yaml"):
-                logger.info(f"Adding invoice {invoice_path.name}")
-                with open(invoice_path) as invoice_file:
-                    r_book.add_invoice(customer_dir.name, invoice_file)
+    report = Report.from_dirs(bookings_dir, accounts_dir, invoices_path)
 
     now = datetime.now()
     out_path = Path(out_dir) / "06_report" / now.isoformat()
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
-    r_book.to_files(out_path)
+    report.to_files(out_path)
 
     logger.debug("Copying static files")
     static_path = out_path / "static"
