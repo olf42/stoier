@@ -136,13 +136,21 @@ class AccountedBook():
             self.spreadsheet.append(row)
         self.entries.update(data)
 
-    def to_files(self, out_path, now):
+    def to_files(self, out_path, now, no_gross_csv):
         for name, account in self.accounts.items():
             save_yaml(account.serialize(), out_path, prefix=f"{name}_", date=now)
+
+        if no_gross_csv:
+            csv_accounts = []
+            for acct_name, acct in self.accounts.items():
+                if acct.acct_type != "gross":
+                    csv_accounts.append(acct_name)
+        else:
+            csv_accounts = list(self.accounts.keys())
         csv_path = out_path / f"{now.isoformat()}.csv"
         with open(csv_path, "w") as csv_file:
-            fieldnames = self.header + list(self.accounts.keys())
-            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            fieldnames = self.header + csv_accounts
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(self.spreadsheet)
         logger.info(f"Written {len(self.spreadsheet)} lines to {csv_path}")
@@ -155,6 +163,9 @@ class AccountedBook():
 @click.option("--vat_col", "vat_col", default="vat")
 @click.option("--vat", "vat_amount", default=19)
 @click.option("-h", "--header", "header_str", default=None)
+@click.option(
+    "--no-gross-csv", help="Exclude gross accounts from csv export", is_flag=True, default=False
+)
 @click.argument("out_dir")
 @click.argument("data_filename")
 @click.argument("assign_filename")
@@ -165,6 +176,7 @@ def account(
     amount_col,
     vat_col,
     header_str,
+    no_gross_csv,
     out_dir,
     data_filename,
     assign_filename
@@ -196,7 +208,7 @@ def account(
     out_path = Path(out_dir) / "05_accounts" / now.isoformat()
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
-    a_book.to_files(out_path, now)
+    a_book.to_files(out_path, now, no_gross_csv)
 
 
 if __name__ == "__main__":
