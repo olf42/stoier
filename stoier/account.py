@@ -150,7 +150,22 @@ class AccountedBook():
                 row[f"{self.vat_name}_{in_out}"] = booked_entry["vat_amount"]
 
             self.spreadsheet.append(row)
+
+        # Remove useless 0% VAT accounts
+        for in_out in ("in", "out"):
+            if f"vat_0_{in_out}" in self.accounts.keys():
+                self.accounts.pop(f"vat_0_{in_out}")
+
         self.entries.update(data)
+
+    def get_sums(self, csv_accounts):
+        sums = dict.fromkeys(csv_accounts, Decimal("0.0"))
+        for row in self.spreadsheet:
+            for account in csv_accounts:
+                value = row[account]
+                if value is not None:
+                    sums[account] += value
+        return sums
 
     def to_files(self, out_path, now, no_gross_csv):
         for name, account in self.accounts.items():
@@ -168,6 +183,7 @@ class AccountedBook():
             fieldnames = self.header + csv_accounts
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames, extrasaction="ignore")
             writer.writeheader()
+            writer.writerow(self.get_sums(csv_accounts))
             writer.writerows(self.spreadsheet)
         logger.info(f"Written {len(self.spreadsheet)} lines to {csv_path}")
 
