@@ -13,6 +13,7 @@ license = "GPL-3.0"
 04_iterate = 'stoier.iterate:iterate'
 05_account = 'stoier.account:account'
 06_report = 'stoier.report:report'
+07_afa = 'stoier.afa:afa_helper'
 
 [tool.poetry.dependencies]
 python = "^3.9"
