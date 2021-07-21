@@ -81,9 +81,10 @@ class AccountedBook():
 
     default_header = ['date_1', 'sender', 'receiver', 'type', 'details', 'amount', 'balance']
 
-    def __init__(self, vat_amount, vat_name="vat", header=None):
+    def __init__(self, vat_amount, amount_col, vat_name="vat", header=None):
         self.entries = dict()
         self.accounts = dict()
+        self.amount_col = amount_col
         self.vat_name = vat_name
         self.vat_amount = vat_amount
         self.spreadsheet = list()
@@ -104,8 +105,10 @@ class AccountedBook():
         # Return a VAT account name for each VAT percentage encountered and one for unknown
         # percentages
         for vat_percentage in vat_percentages:
-            yield (f"{self.vat_name}_{vat_percentage}", "vat")
-        yield (self.vat_name, "vat")
+            yield (f"{self.vat_name}_{vat_percentage}_in", "vat")
+            yield (f"{self.vat_name}_{vat_percentage}_out", "vat")
+        yield (f"{self.vat_name}_in", "vat")
+        yield (f"{self.vat_name}_out", "vat")
 
     def add_entries_from_yaml(self, data_file, assign_file):
         data = yaml.load(data_file, Loader=yaml.Loader)
@@ -136,12 +139,15 @@ class AccountedBook():
 
             # Handle VAT
             vat = entry["vat"]
+            in_out = "in" if entry[self.amount_col] > 0 else "out"
             if isinstance(vat, int):
-                booked_entry = self.accounts[f"{self.vat_name}_{str(vat)}"].add_booking(entry)
-                row[f"{self.vat_name}_{str(vat)}"] = booked_entry["vat_amount"]
+                booked_entry = (
+                    self.accounts[f"{self.vat_name}_{str(vat)}_{in_out}"].add_booking(entry)
+                )
+                row[f"{self.vat_name}_{str(vat)}_{in_out}"] = booked_entry["vat_amount"]
             else:
-                booked_entry = self.accounts[self.vat_name].add_booking(entry)
-                row[self.vat_name] = booked_entry["vat_amount"]
+                booked_entry = self.accounts[f"{self.vat_name}_{in_out}"].add_booking(entry)
+                row[f"{self.vat_name}_{in_out}"] = booked_entry["vat_amount"]
 
             self.spreadsheet.append(row)
         self.entries.update(data)
@@ -197,7 +203,7 @@ def account(
         header = header_str.split(":")
     else:
         header = None
-    a_book = AccountedBook(vat_amount, header=header)
+    a_book = AccountedBook(vat_amount, amount_col, header=header)
 
     try:
         filepath = get_latest_file(data_filename)
