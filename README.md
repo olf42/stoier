@@ -88,6 +88,39 @@ Options:
  -d: debug output
  dist: out directory
 
+
+## 07_afa
+
+This tool can help you to calculate your afa.
+
+Create a yaml-file for each item/group/pool with the following format.
+
+```yaml
+name: this_new_thing
+description: The new black thing on the roof
+date_of_purchase: 2019-01-23
+price: 367.35
+estimated_lifetime_years: 5
+components:
+  - name: Housing
+    price: 154.23
+  - name: Components
+    price: 188.12
+  - name: Paint
+    price: 25.00
+```
+
+> Note: Only name, description, date_of_purchase, price and estimated_lifetime_years are required. The rest is optional an can be used by you to take notes about components, purchases etc.
+
+By default it will give the values for last year (as you need the current years afa less frequent this is the default).
+
+```zsh
+$ 07_afa -v data/07_afa -y 2019
+this_new_thing (The new black thing on the roof)
+None: 73.470
+Original price 367.350 (2019-01-23)
+```
+
 ## Copyright
 
 * Bootswatch Theme "vapor" by Thomas Park
