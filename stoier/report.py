@@ -88,7 +88,7 @@ class Report():
                     "href": f"{name}.html"
                 })
             else:
-                raise TypeError(f"Account {name} has unknown type: {account.type}")
+                raise TypeError(f"Account {name} has unknown type: {account['type']}")
         context = {
             "accounts": index_accounts
         }
