@@ -94,12 +94,17 @@ class AccountedBook():
 
     def all_accounts(self, assign_data):
         accounts = set()
+        vat_percentages = set()
         for date, e, entry in iterate_dated_dict(assign_data):
             for acct_type in ("gross_accounts", "net_accounts"):
                 for acct in entry[acct_type]:
-                    if acct not in accounts:
-                        accounts.add(acct)
-                        yield (acct, acct_type.split("_")[0])
+                    accounts.add(acct)
+                    vat_percentages.add(entry["vat"])
+                    yield (acct, acct_type.split("_")[0])
+        # Return a VAT account name for each VAT percentage encountered and one for unknown
+        # percentages
+        for vat_percentage in vat_percentages:
+            yield (f"{self.vat_name}_{vat_percentage}", "vat")
         yield (self.vat_name, "vat")
 
     def add_entries_from_yaml(self, data_file, assign_file):
@@ -130,8 +135,13 @@ class AccountedBook():
                     row[account] = booked_entry[f"{acct_type}_amount"]
 
             # Handle VAT
-            booked_entry = self.accounts[self.vat_name].add_booking(entry)
-            row[self.vat_name] = booked_entry["vat_amount"]
+            vat = entry["vat"]
+            if isinstance(vat, int):
+                booked_entry = self.accounts[f"{self.vat_name}_{str(vat)}"].add_booking(entry)
+                row[f"{self.vat_name}_{str(vat)}"] = booked_entry["vat_amount"]
+            else:
+                booked_entry = self.accounts[self.vat_name].add_booking(entry)
+                row[self.vat_name] = booked_entry["vat_amount"]
 
             self.spreadsheet.append(row)
         self.entries.update(data)
