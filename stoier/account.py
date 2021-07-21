@@ -83,9 +83,22 @@ class AccountedBook():
         self.vat_name = vat_name
         self.vat_amount = vat_amount
 
+    def all_accounts(self, assign_data):
+        accounts = set()
+        for date, e, entry in iterate_dated_dict(assign_data):
+            for acct_type in ("gross_accounts", "net_accounts"):
+                for acct in entry[acct_type]:
+                    if acct not in accounts:
+                        accounts.add(acct)
+                        yield (acct, acct_type.split("_")[0])
+        yield (self.vat_name, "vat")
+
     def add_entries_from_yaml(self, data_file, assign_file):
         data = yaml.load(data_file, Loader=yaml.Loader)
         assign_data = yaml.load(assign_file, Loader=yaml.Loader)
+        self.accounts = {
+            acct: Account(acct, acct_type) for acct, acct_type in self.all_accounts(assign_data)
+        }
         for date, e, entry in iterate_dated_dict(data):
             assignments = assign_data[date][e]
             types = {
@@ -95,13 +108,9 @@ class AccountedBook():
             entry["vat"] = assignments["vat"]
             for acct_type, account_list in types.items():
                 for account in account_list:
-                    if account not in self.accounts.keys():
-                        self.accounts[account] = Account(account, acct_type)
                     self.accounts[account].add_booking(entry)
 
             # Handle VAT
-            if self.vat_name not in self.accounts.keys():
-                self.accounts[self.vat_name] = Account(self.vat_name, "vat")
             self.accounts[self.vat_name].add_booking(entry)
 
         self.entries.update(data)
