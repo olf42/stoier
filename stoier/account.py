@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import click
+import csv
 import logging
 import yaml
 
@@ -66,6 +67,7 @@ class Account():
         else:
             b["gross_amount"] = b[self.amount_col]
         self.bookings.append(b)
+        return b
 
     def serialize(self):
         return {
@@ -77,11 +79,18 @@ class Account():
 
 class AccountedBook():
 
-    def __init__(self, vat_amount, vat_name="vat"):
+    default_header = ['date_1', 'sender', 'receiver', 'type', 'details', 'amount', 'balance']
+
+    def __init__(self, vat_amount, vat_name="vat", header=None):
         self.entries = dict()
         self.accounts = dict()
         self.vat_name = vat_name
         self.vat_amount = vat_amount
+        self.spreadsheet = list()
+        if header is None:
+            self.header = self.default_header.copy()
+        else:
+            self.header = header
 
     def all_accounts(self, assign_data):
         accounts = set()
@@ -100,6 +109,15 @@ class AccountedBook():
             acct: Account(acct, acct_type) for acct, acct_type in self.all_accounts(assign_data)
         }
         for date, e, entry in iterate_dated_dict(data):
+            logging.debug(entry)
+            # row for csv export
+            row = {h: entry[h] for h in self.header}
+            row.update(
+                dict.fromkeys(
+                    list(self.accounts.keys()), None
+                )
+            )
+
             assignments = assign_data[date][e]
             types = {
                 "gross": assignments["gross_accounts"],
@@ -108,16 +126,26 @@ class AccountedBook():
             entry["vat"] = assignments["vat"]
             for acct_type, account_list in types.items():
                 for account in account_list:
-                    self.accounts[account].add_booking(entry)
+                    booked_entry = self.accounts[account].add_booking(entry)
+                    row[account] = booked_entry[f"{acct_type}_amount"]
 
             # Handle VAT
-            self.accounts[self.vat_name].add_booking(entry)
+            booked_entry = self.accounts[self.vat_name].add_booking(entry)
+            row[self.vat_name] = booked_entry["vat_amount"]
 
+            self.spreadsheet.append(row)
         self.entries.update(data)
 
     def to_files(self, out_path, now):
         for name, account in self.accounts.items():
             save_yaml(account.serialize(), out_path, prefix=f"{name}_", date=now)
+        csv_path = out_path / f"{now.isoformat()}.csv"
+        with open(csv_path, "w") as csv_file:
+            fieldnames = self.header + list(self.accounts.keys())
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(self.spreadsheet)
+        logger.info(f"Written {len(self.spreadsheet)} lines to {csv_path}")
 
 
 @click.command()
@@ -126,6 +154,7 @@ class AccountedBook():
 @click.option("--amount_col", "amount_col", default="amount")
 @click.option("--vat_col", "vat_col", default="vat")
 @click.option("--vat", "vat_amount", default=19)
+@click.option("-h", "--header", "header_str", default=None)
 @click.argument("out_dir")
 @click.argument("data_filename")
 @click.argument("assign_filename")
@@ -135,13 +164,18 @@ def account(
     vat_amount,
     amount_col,
     vat_col,
+    header_str,
     out_dir,
     data_filename,
     assign_filename
 ):
     setup_logging(debug, verbose)
 
-    a_book = AccountedBook(vat_amount)
+    if header_str:
+        header = header_str.split(":")
+    else:
+        header = None
+    a_book = AccountedBook(vat_amount, header=header)
 
     try:
         filepath = get_latest_file(data_filename)
